@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "কির্শফের দ্বিতীয় সূত্র নিচের কোনটি সংরক্ষণ নির্দেশ করে?",
+          options: {
+            a: "ভর",
+            b: "ভরবেগ",
+            c: "আধান",
+            d: "শক্তি",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>কির্শফের দ্বিতীয় সূত্র</b>, যা কির্শফের ভোল্টেজ সূত্র (Kirchhoff's Voltage Law - KVL) নামেও পরিচিত, এটি বলে যে একটি বদ্ধ বর্তনীতে (loop) সমস্ত বিভব পতন এবং তড়িচ্চালক শক্তির বীজগাণিতিক সমষ্টি শূন্য। এটি <b>শক্তির নিত্যতা সূত্রকে</b> (Conservation of Energy) সমর্থন করে। অন্যদিকে, কির্শফের প্রথম সূত্র (কারেন্ট সূত্র) আধানের নিত্যতা সূত্রকে সমর্থন করে।</p>",
+        },
+        {
+          id: 2,
+          question: "মিটার ব্রিজ নিচের কোনটির ভিত্তিতে কাজ করে?",
+          options: {
+            a: "অ্যাম্পিয়ারের সূত্র",
+            b: "কার্শফের সূত্র",
+            c: "হুইটস্টোন ব্রিজ নীতি",
+            d: "ফার্মাটের নীতি",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>মিটার ব্রিজ</b> হলো একটি সরল যন্ত্র যা <b>হুইটস্টোন ব্রিজ নীতির</b> উপর ভিত্তি করে কাজ করে। হুইটস্টোন ব্রিজ নীতি ব্যবহার করে এটি একটি অজানা রোধের মান নির্ণয় করতে পারে। এর কার্যনীতি হলো, যখন ব্রিজটি ভারসাম্য অবস্থায় থাকে, তখন এর চারটি বাহুর রোধগুলির একটি নির্দিষ্ট অনুপাত বজায় থাকে এবং গ্যালভানোমিটারের মধ্য দিয়ে কোনো প্রবাহ চলে না।</p>",
+        },
+        {
+          id: 3,
+          question:
+            "নিচের কোন যন্ত্রের সাহায্যে বিভব পার্থক্য ও তড়িৎ চালক শক্তি নির্ণয় করা যায়?",
+          options: {
+            a: "গ্যালভানোমিটার",
+            b: "পোটেনশিওমিটার",
+            c: "অ্যামিটার",
+            d: "ও’ম মিটার",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>পোটেনশিওমিটার</b> (Potentiometer) একটি অত্যন্ত নির্ভুল যন্ত্র যা একটি তড়িৎ কোষের তড়িচ্চালক শক্তি (EMF) এবং একটি বর্তনীর দুই বিন্দুর মধ্যে বিভব পার্থক্য (Potential Difference) পরিমাপ করতে ব্যবহৃত হয়। এটি বর্তনী থেকে কোনো তড়িৎ প্রবাহ না টেনে পরিমাপ করে, যা অ্যামিটার বা ভোল্টমিটারের চেয়ে বেশি নির্ভুল। গ্যালভানোমিটার প্রবাহের উপস্থিতি ও দিক নির্ণয় করে, অ্যামিটার প্রবাহমাত্রা পরিমাপ করে এবং ওহম মিটার রোধ পরিমাপ করে।</p>",
+        },
+        {
+          id: 4,
+          question: "নিচের কোনটি হুইটস্টোন ব্রিজের সাহায্যে পরিমাপ করা হয়?",
+          options: {
+            a: "প্রবাহ",
+            b: "বিভব পার্থক্য",
+            c: "তড়িচ্চালক শক্তি",
+            d: "রোধ",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>হুইটস্টোন ব্রিজ</b> একটি বৈদ্যুতিক বর্তনী যা <b>অজানা রোধের</b> মান অত্যন্ত নির্ভুলভাবে পরিমাপ করতে ব্যবহৃত হয়। এটি চারটি রোধ (যার মধ্যে একটি অজানা) এবং একটি গ্যালভানোমিটার নিয়ে গঠিত। যখন ব্রিজটি ভারসাম্য অবস্থায় থাকে, তখন জানা রোধগুলির অনুপাতের মাধ্যমে অজানা রোধের মান নির্ণয় করা যায়।</p>",
+        },
+        {
+          id: 5,
+          question:
+            "নিচের কোন যন্ত্রের সাহায্যে ছোটমানের রোধ ও বিদ্যুচ্চালক শক্তি নির্ণয় করা যায়?",
+          options: {
+            a: "অ্যামিটার",
+            b: "গ্যালভানোমিটার",
+            c: "পোটেনশিওমিটার",
+            d: "মিটার ব্রিজ",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>পোটেনশিওমিটার</b> বিভব পার্থক্য এবং তড়িচ্চালক শক্তি নির্ণয়ে খুব নির্ভুলভাবে ব্যবহৃত হয়, বিশেষ করে ছোট মানের ক্ষেত্রে। এটি তার আদর্শ বৈশিষ্ট্যের জন্য পরিচিত যে এটি পরিমাপের সময় বর্তনী থেকে কোনো প্রবাহ টানে না। যদিও মিটার ব্রিজ রোধ নির্ণয়ে ব্যবহৃত হয়, পোটেনশিওমিটার EMF এবং এমনকি ছোট রোধ পরিমাপের জন্য ব্যবহৃত হয় (যেমন কোষের অভ্যন্তরীণ রোধ)। অ্যামিটার প্রবাহ পরিমাপ করে এবং গ্যালভানোমিটার ছোট প্রবাহ সনাক্ত করে।</p>",
+        },
+        {
+          id: 6,
+          question: "তারের আপেক্ষিক রোধ নির্ণয়ে কোন যন্ত্রটি ব্যবহৃত হয়?",
+          options: {
+            a: "পোটেনশিওমিটার",
+            b: "মিটার ব্রিজ",
+            c: "গ্যালভানোমিটার",
+            d: "পোস্ট অফিস বক্স",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>মিটার ব্রিজ</b> (বা স্লাইড ওয়্যার ব্রিজ) একটি হুইটস্টোন ব্রিজের ব্যবহারিক রূপ যা অজানা রোধ পরিমাপ করতে ব্যবহৃত হয়। একটি তারের রোধ নির্ণয়ের পর তারের দৈর্ঘ্য ও প্রস্থচ্ছেদের ক্ষেত্রফল ব্যবহার করে তার <b>আপেক্ষিক রোধ</b> (ρ = RA/L) নির্ণয় করা যায়। পোটেনশিওমিটার EMF পরিমাপ করে, গ্যালভানোমিটার প্রবাহ সনাক্ত করে এবং পোস্ট অফিস বক্সও রোধ নির্ণয়ে ব্যবহৃত হয়, তবে মিটার ব্রিজ বিশেষভাবে তারের আপেক্ষিক রোধ নির্ণয়ের জন্য জনপ্রিয়।</p>",
+        },
+        {
+          id: 7,
+          question: "কোন বর্তনীর অজানা রোধ নির্ণয়ে কোন যন্ত্রটি ব্যবহৃত হয়?",
+          options: {
+            a: "পোস্ট অফিস বক্স",
+            b: "মিটার ব্রিজ",
+            c: "পোটেনশিওমিটার",
+            d: "ক্যালকুলেটর",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>পোস্ট অফিস বক্স</b> হলো একটি সুনির্দিষ্ট এবং নির্ভুল যন্ত্র যা <b>হুইটস্টোন ব্রিজ নীতির</b> উপর ভিত্তি করে কাজ করে। এটি প্রধানত <b>অজানা রোধের</b> মান নির্ণয় করতে ব্যবহৃত হয়। মিটার ব্রিজও অজানা রোধ নির্ণয়ে ব্যবহৃত হয়, তবে পোস্ট অফিস বক্স তার সুনির্দিষ্ট রোধ বাক্সের কারণে তুলনামূলকভাবে বেশি নির্ভুল হতে পারে। পোটেনশিওমিটার বিভব ও EMF পরিমাপ করে।</p>",
+        },
+        {
+          id: 8,
+          question: "কোষের তড়িচ্চালক বল পরিমাপ করার যন্ত্রের নাম-",
+          options: {
+            a: "গ্যালভানোমিটার",
+            b: "মিটার ব্রিজ",
+            c: "অ্যামিটার",
+            d: "পোটেনশিওমিটার",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>পোটেনশিওমিটার</b> হলো একটি আদর্শ যন্ত্র যা একটি কোষের <b>তড়িচ্চালক বল (EMF)</b> অত্যন্ত নির্ভুলভাবে পরিমাপ করতে ব্যবহৃত হয়। এর কারণ হলো, এটি পরিমাপের সময় কোষ থেকে কোনো তড়িৎ প্রবাহ টানে না, ফলে অভ্যন্তরীণ রোধের কারণে সৃষ্ট ভোল্টেজ ড্রপ (নষ্ট ভোল্ট) পরিমাপকে প্রভাবিত করে না। অন্যান্য যন্ত্র যেমন অ্যামিটার (প্রবাহ), মিটার ব্রিজ (রোধ) এবং গ্যালভানোমিটার (প্রবাহ সনাক্তকরণ) ভিন্ন কাজের জন্য ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 9,
+          question: "পোস্ট অফিস বক্স যে কাজে ব্যবহার হয়-",
+          options: {
+            a: "পোস্ট অফিসে বিল সংগ্রহে",
+            b: "পরিবাহীর অজানা রোধ নির্ণয়ে",
+            c: "কোষের তড়িচ্চালক বল নির্ণয়ে",
+            d: "বর্তনী র প্রবাহমাত্রা নির্ণয়ে",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>পোস্ট অফিস বক্স</b> একটি বৈজ্ঞানিক যন্ত্র যা <b>পরিবাহীর অজানা রোধ নির্ণয়ে</b> ব্যবহৃত হয়। এটি মূলত একটি হুইটস্টোন ব্রিজের উন্নত সংস্করণ যেখানে বিভিন্ন মানের রোধগুলিকে প্লাগ-ইন বা ডায়াল সুইচের মাধ্যমে যুক্ত করে নির্ভুলভাবে রোধের মান নির্ণয় করা যায়। এর নামটি ঐতিহাসিক, কারণ এটি একসময় পোস্ট অফিসে টেলিগ্রাফ লাইনের রোধ পরিমাপের জন্য ব্যবহৃত হত।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "কোন ক্ষেত্রে হুইটস্টোন ব্রিজের নিস্পন্দ অবস্থাটি পরিবর্তিত হবে?",
+          options: {
+            a: "বিভিন্ন বাহুর রোধগুলি পরিবর্তিত করা হলে",
+            b: "ব্যাটারি ও গ্যালভানোমিটারের অবস্থান অদল বদল করা হলে",
+            c: "অন্য তড়িচ্চালক বলের ব্যাটারি নিলে",
+            d: "অন্য রোধের গ্যালভানোমিটার নিলে",
+          },
+          correct: "a",
+          explanation:
+            "<p>হুইটস্টোন ব্রিজের <b>নিস্পন্দ অবস্থা</b> (Null condition) মানে হলো গ্যালভানোমিটারের মধ্য দিয়ে কোনো তড়িৎ প্রবাহ না চলা। এই অবস্থাটি চারটি বাহুর রোধগুলির অনুপাতের উপর নির্ভরশীল: P/Q = R/S।</p><ul><li><b>(a) বিভিন্ন বাহুর রোধগুলি পরিবর্তিত করা হলে:</b> যেহেতু নিস্পন্দ অবস্থা রোধগুলির অনুপাতের উপর নির্ভরশীল, তাই <b>যদি কোনো বাহুর রোধ পরিবর্তন করা হয়, তাহলে অনুপাত পরিবর্তিত হবে এবং নিস্পন্দ অবস্থাও পরিবর্তিত হবে</b>। এটিই সঠিক।</li><li><b>(b) ব্যাটারি ও গ্যালভানোমিটারের অবস্থান অদল বদল করা হলে:</b> হুইটস্টোন ব্রিজের পারস্পরিক ধর্ম (Reciprocity Theorem) অনুসারে, ব্যাটারি এবং গ্যালভানোমিটারের অবস্থান অদল বদল করা হলেও নিস্পন্দ অবস্থা অপরিবর্তিত থাকে।</li><li><b>(c) অন্য তড়িচ্চালক বলের ব্যাটারি নিলে:</b> ব্রিজের নিস্পন্দ অবস্থা ব্যাটারির তড়িচ্চালক শক্তির উপর নির্ভর করে না, যতক্ষণ পর্যন্ত যথেষ্ট শক্তি থাকে।</li><li><b>(d) অন্য রোধের গ্যালভানোমিটার নিলে:</b> গ্যালভানোমিটারের রোধ নিস্পন্দ অবস্থাকে প্রভাবিত করে না, এটি শুধুমাত্র নিস্পন্দ অবস্থা সনাক্তকরণের সংবেদনশীলতাকে প্রভাবিত করে।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "কির্শফের দ্বিতীয় সূত্র কোন রাশির সংরক্ষণ নির্দেশ করে?",
+          options: {
+            a: "ভর",
+            b: "ভরবেগ",
+            c: "আধান",
+            d: "শক্তি",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>কির্শফের দ্বিতীয় সূত্র</b> (KVL - Kirchhoff's Voltage Law) একটি বদ্ধ বর্তনীতে বিভব পরিবর্তন সংক্রান্ত। এই সূত্র বলে যে একটি বর্তনীর যেকোনো বদ্ধ লুপে বিভব পরিবর্তনের বীজগাণিতিক সমষ্টি শূন্য। এটি <b>শক্তির নিত্যতা সূত্রের</b> একটি সরাসরি ফল। কারণ, যদি কোনো লুপে মোট বিভব পরিবর্তন শূন্য না হয়, তাহলে একটি চার্জ যখন লুপটি অতিক্রম করে তার প্রারম্ভিক বিন্দুতে ফিরে আসে, তখন তার শক্তির পরিবর্তন হবে, যা শক্তির নিত্যতার পরিপন্থী।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "“তড়িৎ বর্তনীর কোনো সংযোগ বিন্দুতে মিলিত প্রবাহগুলোর বীজগাণিতিক সমষ্টি শূন্য” – এই সূত্রটি কে প্রদান করেন?",
+          options: {
+            a: "ও’ম",
+            b: "ভোল্ট",
+            c: "কির্শফ",
+            d: "অ্যাম্পিয়ার",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই উক্তিটি <b>কির্শফের প্রথম সূত্র</b> (Kirchhoff's Current Law - KCL) বা কির্শফের প্রবাহ সূত্র নামে পরিচিত। এই সূত্রটি <b>গুস্তাভ কির্শফ</b> প্রদান করেন। এটি আধানের নিত্যতা সূত্রের উপর ভিত্তি করে গঠিত, যা বলে যে একটি সংযোগ বিন্দুতে যত চার্জ প্রবেশ করে, তত চার্জই বেরিয়ে যায়, অর্থাৎ চার্জের কোনো সঞ্চয় হয় না।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "নিচের কোন সূত্র ব্যবহার করে হুইটস্টোন ব্রিজ নীতি প্রতিপাদন করা যায়?",
+          options: {
+            a: "কুলম্বের সূত্র",
+            b: "কির্শফের সূত্র",
+            c: "অ্যাম্পিয়ারের সূত্র",
+            d: "ফ্যারাডের সূত্র",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>হুইটস্টোন ব্রিজ নীতি</b> আসলে <b>কির্শফের সূত্রগুলি</b> (বিশেষত কির্শফের ভোল্টেজ সূত্র এবং কিছু ক্ষেত্রে কির্শফের কারেন্ট সূত্র) ব্যবহার করে প্রতিপাদন করা যায়। যখন হুইটস্টোন ব্রিজ ভারসাম্য অবস্থায় থাকে, তখন গ্যালভানোমিটারের মধ্য দিয়ে কোনো প্রবাহ চলে না। এই শর্তে, লুপের বিভব পরিবর্তন এবং সংযোগ বিন্দুতে প্রবাহের ভারসাম্য কির্শফের সূত্র দ্বারা ব্যাখ্যা করা যায়।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "সাম্যাবস্থায় কোনো হুইটস্টোন ব্রিজের গ্যালভানোমিটার প্রবাহের মান-",
+          options: {
+            a: "সর্বোচ্চ",
+            b: "মূল প্রবাহের সমান",
+            c: "শূন্য",
+            d: "অসীম",
+          },
+          correct: "c",
+          explanation:
+            "<p>হুইটস্টোন ব্রিজের <b>সাম্যাবস্থা</b> বা নিস্পন্দ অবস্থা (Null condition) সংজ্ঞায়িত করা হয় সেই অবস্থা দ্বারা যখন গ্যালভানোমিটারের মধ্য দিয়ে <b>কোনো তড়িৎ প্রবাহ চলে না</b>। অর্থাৎ, গ্যালভানোমিটারের দুই প্রান্তের বিভব সমান হয়, ফলে তাদের মধ্যে বিভব পার্থক্য শূন্য এবং প্রবাহও শূন্য হয়।</p>",
+        },
+        {
+          id: 15,
+          question: "নিচের কোন যন্ত্রের সাহায্যে রোধ পরিমাপ করা হয়?",
+          options: {
+            a: "মিটার ব্রিজ",
+            b: "পোটেনশিওমিটার",
+            c: "অ্যামিটার",
+            d: "ভোল্টমিটার",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>মিটার ব্রিজ</b> হলো একটি ব্যবহারিক যন্ত্র যা <b>অজানা রোধের মান</b> পরিমাপ করতে ব্যবহৃত হয়। এটি হুইটস্টোন ব্রিজ নীতির উপর ভিত্তি করে কাজ করে। পোটেনশিওমিটার বিভব ও EMF পরিমাপ করে, অ্যামিটার তড়িৎ প্রবাহ পরিমাপ করে এবং ভোল্টমিটার বিভব পার্থক্য পরিমাপ করে।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "বাসায় ব্যবহৃত বৈদ্যুতিক ফিউজের রোধের মান নির্ণয়ের জন্য কোন যন্ত্রটি সঠিক?",
+          options: {
+            a: "অ্যানোমিটার",
+            b: "গ্যালভানোমিটার",
+            c: "পোটেনশিওমিটার",
+            d: "মিটার ব্রিজ",
+          },
+          correct: "d",
+          explanation:
+            "<p>বাসায় ব্যবহৃত বৈদ্যুতিক ফিউজের মতো ছোট রোধের মান নির্ণয়ের জন্য <b>মিটার ব্রিজ</b> একটি উপযুক্ত যন্ত্র। এটি হুইটস্টোন ব্রিজ নীতির উপর ভিত্তি করে কাজ করে এবং অজানা রোধ নির্ভুলভাবে পরিমাপ করতে সক্ষম। অ্যানোমিটার বায়ুপ্রবাহ পরিমাপ করে, গ্যালভানোমিটার ক্ষুদ্র প্রবাহ সনাক্ত করে এবং পোটেনশিওমিটার বিভব ও EMF পরিমাপ করে।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                    <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                    </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
